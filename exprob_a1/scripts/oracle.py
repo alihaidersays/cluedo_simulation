@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#! /usr/bin/env python2
 
 # import ros stuff
 import rospy
@@ -35,8 +35,7 @@ def hint_callback(ID):
 	if (ID.req != ""):
 		hint = [hint_type, ID.req, generated_hint]
 		if(loadHint(hint)):
-			print("\nHint generated and loaded in the reasoner successfully.")
-			print(hint)
+			#print("\nHint generated and loaded in the reasoner successfully.")
 			return HintResponse(hint)
 		else:
 			print("\nERROR: Hint did not load.")
@@ -46,16 +45,57 @@ def hint_callback(ID):
 def oracle_callback(message):
 	print("Message request:", message.req)
 	
-	if (message.req == "Request Oracle"):
-		return OracleResponse("Oracle")
-	else:
-		print("Message request is incorrect!")
+	if (message.req == "Start reasoner"):
+		oracle_req = ArmorDirectiveRequest()
+		
+		oracle_req.armor_request.client_name = 'tutorial'
+		oracle_req.armor_request.reference_name = 'ontoTest'
+		oracle_req.armor_request.command = 'REASON'
+		oracle_req.armor_request.primary_command_spec = ''
+		oracle_req.armor_request.secondary_command_spec = ''
+		oracle_req.armor_request.args = []
+	
+		oracle_response = armor_interface_client_(oracle_req)
+		
+		if (oracle_response.armor_response.success == True):
+			return OracleResponse("Reasoner started")
+		else:
+			return OracleResponse("Reasoner not started")
+
+	elif (message.req == "Check consistency"):
+		oracle_req = ArmorDirectiveRequest()
+		
+		oracle_req.armor_request.client_name = 'tutorial'
+		oracle_req.armor_request.reference_name = 'ontoTest'
+		oracle_req.armor_request.command = 'QUERY'
+		oracle_req.armor_request.primary_command_spec = 'IND'
+		oracle_req.armor_request.secondary_command_spec = 'CLASS'
+		oracle_req.armor_request.args = ['COMPLETED']
+	
+		oracle_response = armor_interface_client_(oracle_req)
+		
+		if (oracle_response.armor_response.success == True):
+			print("Oracle Response:\n", oracle_response)
+			
+			# checking consistency 
+		    # if consistent:
+			#	return OracleResponse("Hypothesis is consistent")
+			#else:
+			#	return OracleResponse("Hypothesis is inconsistent")
+		
+		else:
+			return OracleResponse("Request for checking consistency failed!")	
+		
+		
+	elif (message.req == "Check correctness"):
+		print("Checking correctness...\n")
+		#return OracleResponse("Hypothesis is correct")
+	
 
 
 def loadHint(hint):
-	print("hint", hint)
+	print("Hint loaded: ", hint)
 	if hint[0] == "who":
-		print("who")
 		hint_req = ArmorDirectiveRequest()
 		hint_req.armor_request.client_name = 'tutorial'
 		hint_req.armor_request.reference_name = 'ontoTest'
@@ -81,7 +121,6 @@ def loadHint(hint):
 				return True
 		
 	elif hint[0] == "what":
-		print("what")
 		hint_req = ArmorDirectiveRequest()
 		hint_req.armor_request.client_name = 'tutorial'
 		hint_req.armor_request.reference_name = 'ontoTest'
@@ -107,7 +146,6 @@ def loadHint(hint):
 				return True
 				
 	elif hint[0] == "where":
-		print("where")
 		hint_req = ArmorDirectiveRequest()
 		hint_req.armor_request.client_name = 'tutorial'
 		hint_req.armor_request.reference_name = 'ontoTest'
@@ -145,18 +183,9 @@ def initializeReasoner():
 	
 	armor_interface_client_response = armor_interface_client_(armor_req)
 	if (armor_interface_client_response.armor_response.success == True):
-		print("\nReasoner initialized.")
+		print("\nReasoner initialized.\n")
 
-	"""
-	rosservice call /armor_interface_srv "armor_request:
-  client_name: 'tutorial'
-  reference_name: 'ontoTest'
-  command: 'LOAD'
-  primary_command_spec: 'FILE'
-  secondary_command_spec: ''
-  args: ['/root/Desktop/cluedo_ontology.owl', 'http://www.emarolab.it/cluedo-ontology', 'true', 'PELLET', 'true']"
-	"""
-	
+
 def main():
 	global armor_interface_client_
 	global flag_
@@ -164,7 +193,7 @@ def main():
 
 	serv = rospy.Service('/hint', Hint, hint_callback)
 	
-	serv2 = rospy.Service('/oracle', Oracle, oracle_callback)		# yet to complete
+	serv2 = rospy.Service('/oracle', Oracle, oracle_callback)
 	
 	rospy.wait_for_service('/armor_interface_srv')
 	try:

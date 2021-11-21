@@ -10,7 +10,7 @@ from exprob_a1.srv import Start, StartResponse
 def main():
     rospy.init_node('user_interface')
     
-    user_input = int(input("Enter 1 to start the game or 0 to quit: "))
+    user_input = int(input("\nEnter 1 to start the game or 0 to quit: "))
     
     while not rospy.is_shutdown():
     	if (user_input == 1):
