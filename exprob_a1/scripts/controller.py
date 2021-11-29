@@ -25,35 +25,42 @@ def start_game_callback(message):
 		print("Request to start game failed!")
 	
 def movement(robot_x, robot_y, target_x, target_y):
-	distance = (((target_x - robot_x )**2) + ((target_y - robot_y)**2) )**0.5
 
-	if (target_y-robot_y) > 0:
-		factor_y = 1
-	elif (target_y-robot_y) < 0:
-		factor_y = -1
-	else:
-		factor_y = 0
-		
-	if (target_x-robot_x) > 0:
-		factor_x = 1
-	elif (target_x-robot_x) < 0:
-		factor_x = -1
-	else:
-		factor_x = 0
-		
-	step_x = 0.2 * factor_x
-	step_y = 0.2 * factor_y
+	distance = (((target_x - robot_x )**2) + ((target_y - robot_y)**2) )**0.5
+	distance = round(distance, 2)
 	
-	while not distance == 0.0:
-		print("Current position: (%g,%g); Distance remaining: %g" % (robot_x, robot_y, distance))
+	while not distance <= 0.05:
+	
+		if (target_y-robot_y) > 0.0:
+			factor_y = 1.0
+		elif (target_y-robot_y) < 0.0:
+			factor_y = -1.0
+		elif (target_y-robot_y) == 0.0:
+			factor_y = 0.0
+			
+		if (target_x-robot_x) > 0.0:
+			factor_x = 1
+		elif (target_x-robot_x) < 0.0:
+			factor_x = -1
+		elif (target_x-robot_x) == 0.0:
+			factor_x = 0
+			
+		step_x = 0.1 * factor_x
+		step_y = 0.1 * factor_y
+		
 		robot_x = robot_x + step_x
 		robot_y = robot_y + step_y
+		
 		distance = (((target_x - robot_x )**2) + ((target_y - robot_y)**2) )**0.5
-		time.sleep(0.5)
+		distance = round(distance, 2)
+		
+		print("Current position: (%0.2f,%0.2f); Distance remaining: %0.2f" % (round(robot_x, 2), round(robot_y, 2), distance))
+		time.sleep(0.05)
 	
-	if (robot_x, robot_y == target_x, target_y):
-		return True
-			
+	#if (robot_x, robot_y == target_x, target_y):
+	#	return True
+	if distance <= 0.05:
+		return True 		
 	
 def runGame():
 	global ID_
@@ -65,33 +72,42 @@ def runGame():
 	checkpoint = Point()
 	
 	# setting positions
-	robot.x, robot.y = 0.0, 0.0
-	roomA.x, roomA.y = 1.0, 0.0
-	roomB.x, roomB.y = 1.0, 1.0
-	roomC.x, roomC.y = 0.0, 1.0
-	checkpoint.x,checkpoint.y = 2.0, 2.0
+	robot.x, robot.y = 0.00, 0.00
+	roomA.x, roomA.y = 1.00, 0.00
+	roomB.x, roomB.y = 1.00, 1.00
+	roomC.x, roomC.y = 0.00, 1.00
+	checkpoint.x,checkpoint.y = 0.00, 2.00
 	
 	while True:
 		# move to A
+		print ("\nRobot going to Room A...")
 		if (movement(robot.x, robot.y, roomA.x, roomA.y)):
-			print ("\nRobot reached Room A\n")
+			robot.x, robot.y = roomA.x, roomA.y
+			print ("\nRobot reached Room A")
 			# ask for hint for Room A
 			hint_client_response = hint_client_("ID"+str(ID_))
-			print("Hint Client Response: ", hint_client_response.res)
+			print("\nHint Client Response: ", hint_client_response.res)
+			print("")
 			time.sleep(1)
 			# move to B
+			print ("\nRobot going to Room B...")
 			if (movement(robot.x, robot.y, roomB.x, roomB.y)):
-				print ("\nRobot reached Room B\n")
+				robot.x, robot.y = roomB.x, roomB.y
+				print ("\nRobot reached Room B")
 				# ask for hint for Room B
 				hint_client_response = hint_client_("ID"+str(ID_))
-				print("Hint Client Response: ", hint_client_response.res)
+				print("\nHint Client Response: ", hint_client_response.res)
+				print("")
 				time.sleep(1)
 				# move to C
+				print ("\nRobot going to Room C...")
 				if (movement(robot.x, robot.y, roomC.x, roomC.y)):
-					print ("\nRobot reached Room C\n")
+					robot.x, robot.y = roomC.x, roomC.y
+					print ("\nRobot reached Room C")
 					# ask for hint for Room C
 					hint_client_response = hint_client_("ID"+str(ID_))
-					print("Hint Client Response: ", hint_client_response.res)
+					print("\nHint Received: ", hint_client_response.res)
+					print("")
 					time.sleep(1)
 				else:
 					print("Robot did not reach Room C")
@@ -101,30 +117,41 @@ def runGame():
 			print("Robot did not reach Room A")
 		
 		# start reasoner
-		oracle_client_response = oracle_client_("Start reasoner")
-		time.sleep(0.5)
-		if oracle_client_response.res == "Reasoner started":
-			print("\nReasoner started\n")
-			oracle_client_response = oracle_client_("Check consistency")
+		if (robot.x, robot.y == roomC.x, roomC.y):
+			oracle_client_response = oracle_client_("Start reasoner")
+			print("\nStarting reasoner...")
 			time.sleep(1)
-			if oracle_client_response.res == "Hypothesis is consistent":
-				# go to checkpoint
-				if (movement(robot.x, robot.y, checkpoint.x, checkpoint.y)):
-					print ("\nRobot reached the checkpoint\n")
-					oracle_client_response = oracle_client_("Check correctness")
-					time.sleep(1)
-					if oracle_client_response.res == "Hypothesis is correct":
-						ID_ = ID_ + 1
-						print("\nThe hypothesis is correct. You win the game!\n")
-						return True
-					else:
-						print("\nHypothesis is INCORRECT. Searching for another hypothesis!\n")
+			if oracle_client_response.res == "Reasoner started":
+				print("\nReasoner started.")
+				oracle_client_response = oracle_client_("Check consistency")
+				print("\nChecking consistency...")
+				time.sleep(1)
+				if oracle_client_response.res == "Hypothesis is consistent":
+					print("\nHypothesis is consistent.\nGoing to checkpoint...")
+					if (movement(robot.x, robot.y, checkpoint.x, checkpoint.y)):
+						robot.x, robot.y = checkpoint.x, checkpoint.y
+						print ("\nRobot reached the checkpoint\n")
+						oracle_client_response = oracle_client_("Check correctness")
+						time.sleep(1)
+						print ("\nChecking correctness...")
+						if oracle_client_response.res == "Hypothesis is correct":
+							ID_ = ID_ + 1
+							print("\nThe hypothesis is correct.\n")
+							print(str(hint_client_response.res[0]), "with the", str(hint_client_response.res[1]), "in the", str(hint_client_response.res[2]))
+							time.sleep(1)
+							print("\nYou win the game.\n")
+							time.sleep(1)
+							return True
+						else:
+							print("\nHypothesis is INCORRECT.\n\nSearching for another hypothesis....\n")
+							time.sleep(1)
 				else:
-					print("\nHypothesis is INCONSISTENT. Searching for another hypothesis!\n")
-		else:
-			print("Oracle Client Response: ", oracle_client_response.res)
+					print("\nHypothesis is INCONSISTENT.\n\nSearching for another hypothesis...\n")
+					time.sleep(1)
+			else:
+				print("Oracle Client Response: ", oracle_client_response.res)
 
-		ID_ = ID_ + 1
+			ID_ = ID_ + 1
 
 def main():
 	global hint_client_
