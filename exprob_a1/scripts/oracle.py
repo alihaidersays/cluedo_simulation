@@ -13,6 +13,9 @@ armor_interface_client_ = None
 flag_ = 0
 counter_ = 0
 hint_ = []
+loaded_hints_ = []
+
+
 correct_hyp = [["Rev. Green", "Candlestick", "Conservatory"], 
 			   ["Rev. Green", "Dagger", "Conservatory"], 
 			   ["Rev. Green", "Lead Pipe", "Conservatory"], 
@@ -76,6 +79,7 @@ correct_hyp = [["Rev. Green", "Candlestick", "Conservatory"],
 			   ["Col. Mustard", "Rope", "Kitchen"], 
 			   ["Col. Mustard", "Spanner", "Kitchen"]]
 
+
 # service callback
 
 def hint_callback(ID):
@@ -108,7 +112,7 @@ def hint_callback(ID):
 		print("\nID request is incorrect!")
 
 def oracle_callback(message):
-	global counter_
+	global counter_, loaded_hints_
 	
 	if (message.req == "Start reasoner"):
 		oracle_req = ArmorDirectiveRequest()
@@ -148,21 +152,33 @@ def oracle_callback(message):
 				counter_ = len_queried_objects
 				return OracleResponse("Hypothesis is consistent")
 			else:
+				loaded_hints_ = []
 				return OracleResponse("Hypothesis is inconsistent")
 		else:
 			return OracleResponse("Request for checking consistency failed!")	
 		
 	elif (message.req == "Check correctness"):
 		for i in correct_hyp:
-			if (hint_ == i):
+			if (set(loaded_hints_) == set(i)):
+				loaded_hints_ = i
 				return OracleResponse("Hypothesis is correct")
-			else:
-				return OracleResponse("ypothesis is incorrect!")
+		
+		print("loaded_hints_: ", loaded_hints_)
+		print("i: ", i)
+		return OracleResponse("Hypothesis is incorrect")
+		
+	elif (message.req == "Send correct hints"):
+		sentence = str(loaded_hints_[0]) + " with the " + str(loaded_hints_[1]) + " in the " + str(loaded_hints_[2])
+		return OracleResponse(sentence)
 	
 
 
 def loadHint(hint_arg):
+	global loaded_hints_
 	print("Hint loaded: ", hint_arg)
+
+	loaded_hints_.append(hint_arg[2])
+	
 	if hint_arg[0] == "who":
 		hint_req = ArmorDirectiveRequest()
 		hint_req.armor_request.client_name = 'tutorial'

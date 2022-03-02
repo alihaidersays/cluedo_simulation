@@ -20,7 +20,7 @@ def start_game_callback(message):
 	if (message.req == "Begin"):
 		if(runGame()):
 			time.sleep(1)
-			return StartResponse("Finished.")
+			return StartResponse("Finished")
 	else:
 		print("Request to start game failed!")
 	
@@ -106,7 +106,7 @@ def runGame():
 					print ("\nRobot reached Room C")
 					# ask for hint for Room C
 					hint_client_response = hint_client_("ID"+str(ID_))
-					print("\nHint Received: ", hint_client_response.res)
+					print("\nHint Client Response: ", hint_client_response.res)
 					print("")
 					time.sleep(1)
 				else:
@@ -137,7 +137,11 @@ def runGame():
 						if oracle_client_response.res == "Hypothesis is correct":
 							ID_ = ID_ + 1
 							print("\nThe hypothesis is correct.\n")
-							print(str(hint_client_response.res[0]), "with the", str(hint_client_response.res[1]), "in the", str(hint_client_response.res[2]))
+							
+							oracle_client_response = oracle_client_("Send correct hints")
+							time.sleep(1)
+							print(oracle_client_response.res)
+							
 							time.sleep(1)
 							print("\nYou win the game.\n")
 							time.sleep(1)

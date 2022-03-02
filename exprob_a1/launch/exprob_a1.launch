@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+
+    <node pkg="exprob_a1" type="oracle.py" name="oracle"/>
+    <node pkg="exprob_a1" type="controller.py" name="controller" output="screen" />
+    <node pkg="exprob_a1" type="user_interface.py" name="user_interface" output="screen" />
+
+</launch>
